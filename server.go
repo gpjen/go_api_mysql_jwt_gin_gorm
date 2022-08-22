@@ -9,9 +9,17 @@ import (
 func main() {
 	router := gin.Default()
 
-	router.GET("/", func(c *gin.Context) {
+	group := router.Group("api/v1")
+
+	group.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"message": "oke booooks",
+			"message": "mantep books",
+		})
+	})
+
+	group.POST("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "oke post",
 		})
 	})
 
