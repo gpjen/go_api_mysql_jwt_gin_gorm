@@ -10,5 +10,5 @@ type User struct {
 	Active    bool      `gorm:"default:true" json:"-"`
 	Token     string    `gorm:"-" json:"token,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
-	UpdateAt  time.Time `json:"-"`
+	UpdatedAt time.Time `json:"-"`
 }
