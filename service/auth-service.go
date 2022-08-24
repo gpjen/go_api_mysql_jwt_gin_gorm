@@ -3,42 +3,88 @@ package service
 import (
 	"go_api_mysql_jwt_gin_gorm/dto"
 	"go_api_mysql_jwt_gin_gorm/entity"
+	"go_api_mysql_jwt_gin_gorm/helper"
 	"go_api_mysql_jwt_gin_gorm/repository"
 )
 
-type AuthService interface {
+type UserService interface {
 	FindAll() ([]entity.User, error)
 	FindById(ID uint64) (entity.User, error)
 	FindByEmail(email string) (entity.User, error)
 	CreateUser(user dto.UserCreateDTO) (entity.User, error)
-	// VerifyCredential(email string, password string) interface{}
+	UpdateUser(user dto.UserUpdateDTO, ID uint64) (entity.User, error)
+	SoftDelete(ID uint64) (entity.User, error)
 }
 
-type authService struct {
+type userService struct {
 	userRepository repository.UserRepository
 }
 
-func NewAuthService(userRepository repository.UserRepository) AuthService {
-	return &authService{userRepository}
+func NewUserService(userRepository repository.UserRepository) UserService {
+	return &userService{userRepository}
 }
 
-func (s *authService) FindAll() ([]entity.User, error) {
+// find all users
+func (s *userService) FindAll() ([]entity.User, error) {
 	return s.userRepository.FindAll()
 }
 
-func (s *authService) FindById(ID uint64) (entity.User, error) {
+// find user by ID
+func (s *userService) FindById(ID uint64) (entity.User, error) {
 	return s.userRepository.FindById(ID)
 }
 
-func (s *authService) FindByEmail(email string) (entity.User, error) {
+// find user by email
+func (s *userService) FindByEmail(email string) (entity.User, error) {
 	return s.userRepository.FindByEmail(email)
 }
 
-func (s *authService) CreateUser(user dto.UserCreateDTO) (entity.User, error) {
+// create new user
+func (s *userService) CreateUser(user dto.UserCreateDTO) (entity.User, error) {
+	hash, err := helper.HasshAndSalt([]byte(user.Password))
+	if err != nil {
+		return entity.User{}, err
+	}
+
 	newUser := entity.User{
 		Name:     user.Name,
 		Email:    user.Email,
-		Password: user.Password,
+		Password: hash,
 	}
+
 	return s.userRepository.CreateUser(newUser)
+}
+
+// update new User
+func (s *userService) UpdateUser(user dto.UserUpdateDTO, ID uint64) (entity.User, error) {
+	findData, err := s.userRepository.FindById(ID)
+	if err != nil {
+		return findData, err
+	}
+
+	if user.Name != "" {
+		findData.Name = user.Name
+	}
+	if user.Email != "" {
+		findData.Email = user.Email
+	}
+	if user.Password != "" {
+		findData.Password, _ = helper.HasshAndSalt([]byte(user.Password))
+	}
+
+	return s.userRepository.UpdateUser(findData)
+}
+
+// soft delete user
+func (s *userService) SoftDelete(ID uint64) (entity.User, error) {
+	user, err := s.userRepository.FindById(ID)
+	if err != nil {
+		return user, err
+	}
+
+	// update active and save
+	user.Active = false
+	s.userRepository.UpdateUser(user)
+
+	return user, nil
 }

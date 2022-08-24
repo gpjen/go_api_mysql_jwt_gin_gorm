@@ -2,7 +2,6 @@ package main
 
 import (
 	"go_api_mysql_jwt_gin_gorm/config"
-	"go_api_mysql_jwt_gin_gorm/controller"
 	"go_api_mysql_jwt_gin_gorm/handler"
 	"go_api_mysql_jwt_gin_gorm/repository"
 	"go_api_mysql_jwt_gin_gorm/service"
@@ -12,12 +11,11 @@ import (
 )
 
 var (
-	db   = config.ConnectDB()
-	auth = controller.NewAuthController()
+	db = config.ConnectDB()
 
+	// user
 	userRepo    = repository.NewUserRepository(db)
-	userService = service.NewAuthService(userRepo)
-
+	userService = service.NewUserService(userRepo)
 	userHandler = handler.NewUserHandler(userService)
 )
 
@@ -32,11 +30,11 @@ func main() {
 
 	group := router.Group("api/v1")
 
-	group.GET("/login", auth.Login)
-	group.GET("/register", auth.Register)
 	group.GET("/users", userHandler.FindAll)
 	group.GET("/user/:id", userHandler.FindById)
 	group.POST("/user", userHandler.CreateUser)
+	group.PATCH("/user/:id", userHandler.UpdateUser)
+	group.DELETE("/user/:id", userHandler.SoftDelete)
 
 	if err := router.Run(":" + port); err != nil {
 		panic(err.Error())

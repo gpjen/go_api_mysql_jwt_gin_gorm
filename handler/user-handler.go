@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"go_api_mysql_jwt_gin_gorm/dto"
 	"go_api_mysql_jwt_gin_gorm/helper"
 	"go_api_mysql_jwt_gin_gorm/service"
@@ -13,10 +12,10 @@ import (
 )
 
 type userHandler struct {
-	userService service.AuthService
+	userService service.UserService
 }
 
-func NewUserHandler(userService service.AuthService) *userHandler {
+func NewUserHandler(userService service.UserService) *userHandler {
 	return &userHandler{userService}
 }
 
@@ -46,6 +45,8 @@ func (h *userHandler) FindById(c *gin.Context) {
 }
 
 func (h *userHandler) CreateUser(c *gin.Context) {
+
+	// binding json
 	var newDataUser dto.UserCreateDTO
 	err := c.ShouldBindJSON(&newDataUser)
 	if err != nil {
@@ -53,20 +54,16 @@ func (h *userHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
+	// validate json
 	v := validator.New()
 	err = v.Struct(newDataUser)
 	if err != nil {
-		var errValidator []string
-
-		for _, e := range err.(validator.ValidationErrors) {
-			errMessage := fmt.Sprintf("Error on field %s, condition %s", e.Field(), e.ActualTag())
-			errValidator = append(errValidator, errMessage)
-		}
-
+		errValidator := helper.ConvertErrToSliceOfString(err)
 		c.JSON(http.StatusBadRequest, helper.ResponseFail("Failed validate field request", errValidator))
 		return
 	}
 
+	// create user
 	data, err := h.userService.CreateUser(newDataUser)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, helper.ResponseFail("Failed create new user", err.Error()))
@@ -74,4 +71,68 @@ func (h *userHandler) CreateUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, helper.ResponseOK("create new user", data))
+}
+
+func (h *userHandler) UpdateUser(c *gin.Context) {
+	// catch param id and convert to unit64
+	idString := c.Param("id")
+	idNumber, err := strconv.Atoi(idString)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, helper.ResponseFail("Failed update user", err.Error()))
+		return
+	}
+
+	// binding json body
+	var newDataUpdate dto.UserUpdateDTO
+	err = c.ShouldBindJSON(&newDataUpdate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, helper.ResponseFail("Failed update user", err.Error()))
+		return
+	}
+
+	// handle empty data all field
+	if newDataUpdate.Email == "" && newDataUpdate.Name == "" && newDataUpdate.Password == "" {
+		c.JSON(http.StatusBadRequest, helper.ResponseFail("Failed update user", []string{"no data change"}))
+		return
+	}
+
+	// validate field json
+	v := validator.New()
+	err = v.Struct(newDataUpdate)
+	if err != nil {
+		errValidator := helper.ConvertErrToSliceOfString(err)
+		c.JSON(http.StatusBadRequest, helper.ResponseFail("Failed update user", errValidator))
+		return
+	}
+
+	// update new data
+	data, err := h.userService.UpdateUser(newDataUpdate, uint64(idNumber))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, helper.ResponseFail("Failed update user", err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":   idNumber,
+		"data": data,
+	})
+}
+
+func (h *userHandler) SoftDelete(c *gin.Context) {
+	// get param id
+	idString := c.Param("id")
+	idNumber, err := strconv.Atoi(idString)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, helper.ResponseFail("Failed delete user", err.Error()))
+		return
+	}
+
+	data, err := h.userService.SoftDelete(uint64(idNumber))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, helper.ResponseFail("Failed delete user", err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, helper.ResponseOK("Delete user data", data))
+
 }
