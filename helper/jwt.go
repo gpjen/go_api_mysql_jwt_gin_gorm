@@ -1,4 +1,4 @@
-package service
+package helper
 
 import (
 	"fmt"
@@ -47,7 +47,7 @@ func (j *jwtService) GenerateToken(userID string) string {
 	return t
 }
 
-func (j jwtService) ValidateToken(token string) (*jwt.Token, error) {
+func (j *jwtService) ValidateToken(token string) (*jwt.Token, error) {
 	return jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signin method %v", t.Header["alg"])

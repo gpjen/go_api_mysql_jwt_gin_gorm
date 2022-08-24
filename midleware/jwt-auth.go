@@ -2,7 +2,6 @@ package midleware
 
 import (
 	"go_api_mysql_jwt_gin_gorm/helper"
-	"go_api_mysql_jwt_gin_gorm/service"
 	"log"
 	"net/http"
 
@@ -10,7 +9,7 @@ import (
 	"gopkg.in/dgrijalva/jwt-go.v3"
 )
 
-func AuthorixeJWT(jwtService service.JWTservice) gin.HandlerFunc {
+func AuthorizeJWT(jwtService helper.JWTservice) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		autHeader := c.GetHeader("Authorization")
 		if autHeader == "" {
