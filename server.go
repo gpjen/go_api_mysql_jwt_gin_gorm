@@ -36,7 +36,6 @@ func main() {
 	group.GET("/register", auth.Register)
 	group.GET("/users", userHandler.FindAll)
 	group.GET("/user/:id", userHandler.FindById)
-	group.POST("/email", userHandler.FindByEmail)
 	group.POST("/user", userHandler.CreateUser)
 
 	if err := router.Run(":" + port); err != nil {

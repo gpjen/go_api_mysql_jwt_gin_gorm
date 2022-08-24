@@ -1,7 +1,5 @@
 package helper
 
-import "strings"
-
 type responseOK struct {
 	Status  bool        `json:"status"`
 	Message string      `josn:"message"`
@@ -25,12 +23,11 @@ func ResponseOK(message string, data interface{}) responseOK {
 	}
 }
 
-func ResponseFail(message string, err string) responseFail {
-	splitError := strings.Split(err, "\n")
+func ResponseFail(message string, err interface{}) responseFail {
 
 	return responseFail{
 		Status:  false,
 		Message: message,
-		Errors:  splitError,
+		Errors:  err,
 	}
 }

@@ -3,8 +3,8 @@ package repository
 import (
 	"fmt"
 	"go_api_mysql_jwt_gin_gorm/entity"
+	"go_api_mysql_jwt_gin_gorm/helper"
 
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -13,7 +13,7 @@ type UserRepository interface {
 	FindById(ID uint64) (entity.User, error)
 	FindByEmail(email string) (entity.User, error)
 	CreateUser(user entity.User) (entity.User, error)
-	// UpdateUser(user entity.User) (entity.User, error)
+	UpdateUser(user entity.User) (entity.User, error)
 }
 
 type userConnection struct {
@@ -22,14 +22,6 @@ type userConnection struct {
 
 func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userConnection{db}
-}
-
-func hasshAndSalt(pwd []byte) string {
-	hash, err := bcrypt.GenerateFromPassword(pwd, bcrypt.MaxCost)
-	if err != nil {
-		panic("Failed to hash a password")
-	}
-	return string(hash)
 }
 
 func (u *userConnection) FindAll() ([]entity.User, error) {
@@ -58,14 +50,23 @@ func (u *userConnection) FindByEmail(email string) (entity.User, error) {
 }
 
 func (u *userConnection) CreateUser(user entity.User) (entity.User, error) {
-	// user.Password = hasshAndSalt([]byte(user.Password))
-	err := u.db.Create(&user).Error
+	hashed, err := helper.HasshAndSalt([]byte(user.Password))
+	if err != nil {
+		return user, err
+	}
+	user.Password = hashed
+
+	err = u.db.Create(&user).Error
 	return user, err
 }
 
 func (u *userConnection) UpdateUser(user entity.User) (entity.User, error) {
 	if user.Password != "" {
-		user.Password = hasshAndSalt([]byte(user.Password))
+		hashed, err := helper.HasshAndSalt([]byte(user.Password))
+		if err != nil {
+			return user, err
+		}
+		user.Password = hashed
 	}
 
 	err := u.db.Save(&user).Error

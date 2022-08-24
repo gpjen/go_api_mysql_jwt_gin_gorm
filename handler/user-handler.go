@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"go_api_mysql_jwt_gin_gorm/dto"
 	"go_api_mysql_jwt_gin_gorm/helper"
 	"go_api_mysql_jwt_gin_gorm/service"
@@ -8,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type userHandler struct {
@@ -43,33 +45,31 @@ func (h *userHandler) FindById(c *gin.Context) {
 	c.JSON(http.StatusOK, helper.ResponseOK("Find by id", data))
 }
 
-func (h *userHandler) FindByEmail(c *gin.Context) {
-	var emailRequest dto.EmailRequestDto
-	err := c.ShouldBindJSON(&emailRequest)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, helper.ResponseFail("find email", err.Error()))
-		return
-	}
-
-	data, err := h.userService.FindByEmail(emailRequest.Email)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, helper.ResponseFail("find email", err.Error()))
-		return
-	}
-
-	c.JSON(http.StatusOK, helper.ResponseOK("find email", data))
-}
-
 func (h *userHandler) CreateUser(c *gin.Context) {
 	var newDataUser dto.UserCreateDTO
 	err := c.ShouldBindJSON(&newDataUser)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, helper.ResponseFail("create new user", err.Error()))
+		c.JSON(http.StatusBadRequest, helper.ResponseFail("Error json request", err.Error()))
 		return
 	}
+
+	v := validator.New()
+	err = v.Struct(newDataUser)
+	if err != nil {
+		var errValidator []string
+
+		for _, e := range err.(validator.ValidationErrors) {
+			errMessage := fmt.Sprintf("Error on field %s, condition %s", e.Field(), e.ActualTag())
+			errValidator = append(errValidator, errMessage)
+		}
+
+		c.JSON(http.StatusBadRequest, helper.ResponseFail("Failed validate field request", errValidator))
+		return
+	}
+
 	data, err := h.userService.CreateUser(newDataUser)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, helper.ResponseFail("create new user", err.Error()))
+		c.JSON(http.StatusBadRequest, helper.ResponseFail("Failed create new user", err.Error()))
 		return
 	}
 
