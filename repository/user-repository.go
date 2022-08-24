@@ -40,7 +40,7 @@ func (u *userRepository) FindById(ID uint64) (entity.User, error) {
 
 func (r *userRepository) FindByEmail(email string) (entity.User, error) {
 	var user entity.User
-	err := r.db.Where("email = ?, active = ?", email, true).Find(&user).Error
+	err := r.db.Where("email = ? AND active = ?", email, true).Find(&user).Error
 	if user.ID == 0 {
 		return user, fmt.Errorf("%s not found", email)
 	}

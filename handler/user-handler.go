@@ -19,6 +19,34 @@ func NewUserHandler(userService service.UserService) *userHandler {
 	return &userHandler{userService}
 }
 
+func (h *userHandler) Login(c *gin.Context) {
+	// get json data
+	var dataUser dto.UserLoginDTO
+	err := c.ShouldBindJSON(&dataUser)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, helper.ResponseFail("Failed user login", err.Error()))
+		return
+	}
+
+	// validate form/json login
+	v := validator.New()
+	err = v.Struct(dataUser)
+	if err != nil {
+		errValidator := helper.ConvertErrToSliceOfString(err)
+		c.JSON(http.StatusBadRequest, helper.ResponseFail("Failed user login", errValidator))
+		return
+	}
+
+	// check data
+	data, err := h.userService.LoginUser(dataUser.Email, dataUser.Password)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, helper.ResponseFail("Failed user login", err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, helper.ResponseOK("User login", data))
+}
+
 func (h *userHandler) FindAll(c *gin.Context) {
 	data, err := h.userService.FindAll()
 	if err != nil {

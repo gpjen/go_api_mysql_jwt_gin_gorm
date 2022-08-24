@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"go_api_mysql_jwt_gin_gorm/dto"
 	"go_api_mysql_jwt_gin_gorm/entity"
 	"go_api_mysql_jwt_gin_gorm/helper"
@@ -11,6 +12,7 @@ type UserService interface {
 	FindAll() ([]entity.User, error)
 	FindById(ID uint64) (entity.User, error)
 	FindByEmail(email string) (entity.User, error)
+	LoginUser(email string, pwd string) (entity.User, error)
 	CreateUser(user dto.UserCreateDTO) (entity.User, error)
 	UpdateUser(user dto.UserUpdateDTO, ID uint64) (entity.User, error)
 	SoftDelete(ID uint64) (entity.User, error)
@@ -22,6 +24,24 @@ type userService struct {
 
 func NewUserService(userRepository repository.UserRepository) UserService {
 	return &userService{userRepository}
+}
+
+// user login
+func (s *userService) LoginUser(email string, pwd string) (entity.User, error) {
+	// check email user
+	data, err := s.userRepository.FindByEmail(email)
+	if err != nil {
+		return data, fmt.Errorf("email and password doesnt match")
+	}
+
+	// check password user
+	matching, _ := helper.ComparePasword(pwd, data.Password)
+
+	if !matching {
+		return data, fmt.Errorf("email and password doesnt match")
+	}
+
+	return data, nil
 }
 
 // find all users

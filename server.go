@@ -30,6 +30,8 @@ func main() {
 
 	group := router.Group("api/v1")
 
+	group.POST("/login", userHandler.Login)
+
 	group.GET("/users", userHandler.FindAll)
 	group.GET("/user/:id", userHandler.FindById)
 	group.POST("/user", userHandler.CreateUser)
