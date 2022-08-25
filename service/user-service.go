@@ -6,6 +6,10 @@ import (
 	"go_api_mysql_jwt_gin_gorm/entity"
 	"go_api_mysql_jwt_gin_gorm/helper"
 	"go_api_mysql_jwt_gin_gorm/repository"
+	"os"
+	"time"
+
+	"gopkg.in/dgrijalva/jwt-go.v3"
 )
 
 type UserService interface {
@@ -36,10 +40,21 @@ func (s *userService) LoginUser(email string, pwd string) (entity.User, error) {
 
 	// check password user
 	matching, _ := helper.ComparePasword(pwd, data.Password)
-
 	if !matching {
 		return data, fmt.Errorf("email and password doesnt match")
 	}
+
+	// generate jwt token
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+	claims["id"] = data.ID
+	claims["role"] = "admin"
+	claims["exp"] = time.Now().Add(time.Minute * 5).Unix()
+	t, err := token.SignedString([]byte(os.Getenv("JWT_SECRETKEY")))
+	if err != nil {
+		return entity.User{}, fmt.Errorf("failed generate token")
+	}
+	data.Token = t
 
 	return data, nil
 }
